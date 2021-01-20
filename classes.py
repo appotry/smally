@@ -156,10 +156,15 @@ class walk():
 
 class pShow(walk):
     """show command"""
-    def __init__(it, ptype, interval, recursive, timewindow, path):
+    def __init__(it, ptype, interval, recursive, timewindow, paths, files):
         it.ptype = ptype
         super().__init__(ptype, interval, recursive, timewindow)
-        it.start(path)
+        if paths is not None:
+            it.start(paths)
+        else:
+            for sf in files:
+                it.do(sf)
+                time.sleep(interval)
 
     def after(it):
         if it.ptype != []:
@@ -175,10 +180,16 @@ class pShow(walk):
 
 class pSize(walk):
     """size command"""
-    def __init__(it, ptype, interval, recursive, timewindow, path):
+    def __init__(it, ptype, interval, recursive, timewindow, paths, files):
         super().__init__(ptype, interval, recursive, timewindow)
         it.size = 0
-        it.start(path)
+        if paths is not None:
+            it.start(paths)
+        else:
+            for sf in files:
+                it.do(sf)
+                time.sleep(interval)
+            it.after()
 
     def after(it):
         log.info('%s: total size: '%NAME
