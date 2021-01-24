@@ -238,7 +238,7 @@ class pJpegtran(walk):
     def do(it, pathname):
         try:
             basename = os.path.basename(pathname)
-            wd = os.path.dirname(pathname)
+            wd = os.path.dirname(os.path.abspath(pathname))
             # baseline
             file_1 = wd + '/'+ '__smally_jpg1_' + basename
             cmd_1 = 'jpegtran -copy none -optimize %s > %s'%(pathname,file_1)
@@ -356,7 +356,7 @@ class pOptipng(walk):
     def do(it, pathname):
         try:
             basename = os.path.basename(pathname)
-            wd = os.path.dirname(pathname)
+            wd = os.path.dirname(os.path.abspath(pathname))
             out_file = wd + '/' + basename + '.smally.out'
             cmd = 'optipng -fix -%s %s -out %s'%(it.level,pathname,out_file)
             rcode, _, err = sh.cmd(cmd)
