@@ -70,6 +70,13 @@ def main():
 
     9), compress PNG losslessly with optipng in batch mode
         $ python3 smally.py -p path1 path2 --optipng o2 --png
+
+    10), file mode
+        $ python3 smally.py -f file1 file2 --show --jpg --png
+        $ python3 smally.py -f file1 file2 --size --jpg --png
+        $ python3 smally.py -f file1 file2 --jpegtran --jpg
+        $ python3 smally.py -f file1 file2 --optipng o2 --png
+        -f: file mode
     '''),
         epilog='smally project page: '
                'https://github.com/xinlin-z/smally\n'
@@ -124,7 +131,7 @@ def main():
         file_exts = set()
         for sfile in args.files:
             _, ext = os.path.splitext(sfile)
-            file_exts.add(ext)
+            file_exts.add(ext.lower())
             if not os.path.exists(sfile):
                 log.info('%s: file %s is not existed.' % (NAME,sfile))
                 sys.exit(1)
@@ -141,7 +148,7 @@ def main():
         log.info('%s: No picture type choosed.' % NAME)
         sys.exit(1)
     if args.files:
-        if not file_exts < set(ptype):
+        if not file_exts <= set(ptype):
             log.info('%s: input files are not in picture type choosed.'%NAME)
             sys.exit(1)
     # interval
@@ -172,14 +179,14 @@ def main():
             sys.exit(1)
         if sh.which('jpegtran') is False: sys.exit(1)
         pJpegtran(ptype, interval, args.recursive, args.timewindow,
-                  args.paths, args.keepmtime)
+                  args.paths, args.files, args.keepmtime)
     if args.optipng:
         if ptype != ['.png']:
             log.info('%s: --optipng only support PNG.' % NAME)
             sys.exit(1)
         if sh.which('optipng') is False: sys.exit(1)
         pOptipng(ptype, interval, args.recursive, args.timewindow,
-                 args.paths, args.keepmtime, args.optipng)
+                 args.paths, args.files, args.keepmtime, args.optipng)
 
 
 if __name__ == '__main__':
