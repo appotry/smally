@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-To compress JPEG, PNG and GIF file losslessly by jpegtran, optipng
-and gifsicle respectively in batch mode, in-place and keep mtime
-unchanged.
+Compress JPEG, PNG and GIF file by jpegtran, optipng
+and gifsicle losslessly and respectively in batch mode,
+inplace and keep mtime unchanged.
 
 Author:   xinlin-z
 Github:   https://github.com/xinlin-z/smally
@@ -11,7 +11,7 @@ License:  MIT
 """
 import platform
 if platform.system() == 'Windows':
-    raise NotImplementedError('Not yet support Windows OS!')
+    raise NotImplementedError('Not yet support Windows!')
 
 
 import sys
@@ -22,11 +22,14 @@ import multiprocessing as mp
 import shlex
 
 
-__all__ = ['is_jpeg_progressive', 'jpegtran', 'optipng', 'gifsicle']
+__all__ = ['is_jpeg_progressive',
+           'jpegtran',
+           'optipng',
+           'gifsicle']
 
 
 def _cmd(cmd: str, shell: bool=False) -> tuple[int,bytes,bytes]:
-    """ execute a command w/o shell,
+    """ execute a command w/ or w/o shell,
         return returncode, stdout, stderr """
     p = subprocess.run(cmd if shell else shlex.split(cmd),
                        shell=shell,
@@ -36,7 +39,7 @@ def _cmd(cmd: str, shell: bool=False) -> tuple[int,bytes,bytes]:
 
 
 def is_jpeg_progressive(pathname: str) -> bool:
-    """ check if pathname is progressive jpg format """
+    """ check if pathname is progressive jpeg format """
     cmdstr = 'file %s | grep progressive' % pathname
     code, _, _ = _cmd(cmdstr, shell=True)
     return code == 0
@@ -211,7 +214,7 @@ def _find_xargs(pnum: int, ftype: str='', recur: bool=False) -> None:
         sys.exit(3)  # subprocess error
 
 
-_VER = 'smally V0.53 by xinlin-z \
+_VER = 'smally V0.54 by xinlin-z \
         (https://github.com/xinlin-z/smally)'
 
 
@@ -229,9 +232,12 @@ if __name__ == '__main__':
                        help='recursively working on subdirectories ')
     parser.add_argument('pathname', help='specify the pathname, '
                                          'file or directory')
-    parser.add_argument('-P', type=int, default=mp.cpu_count(),
-                        help='parallel process number, '
-                             'default is logical cpu number')
+    parser.add_argument('-P',
+                        type=int,
+                        default=mp.cpu_count(),
+                        metavar='',
+                        help='number of parallel processes, '
+                             'default is the logical cpu number')
     args = parser.parse_args()
 
     # get pathname type
