@@ -6,7 +6,7 @@ inplace and keep mtime unchanged.
 
 Author:   xinlin-z
 Github:   https://github.com/xinlin-z/smally
-Blog:     https://cs.pynote.net
+Blog:     https://CS4096.com
 License:  MIT
 """
 import platform
