@@ -193,7 +193,7 @@ def _show(ftype: str, pathname: str, saved: tuple[int,int]) -> None:
 
 
 def _find_xargs(pnum: int, ftype: str='', recur: bool=False) -> None:
-    pnum = max(1, pnum)
+    pnum = min(mp.cpu_count(), pnum)
     print('# parallel process number: ', pnum)
     cmdstr = 'find -L %s -type f -print0 %s | ' \
              'xargs -P%d -I+ -0 python %s %s +' \
