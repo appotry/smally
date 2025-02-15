@@ -18,9 +18,9 @@ check_tool optipng
 check_tool gifsicle
 
 
-echo '# Test smally.py with type'
+echo '# Test smally.py with type specifications'
 cp -r testpic _ttpic
-python3 smally.py -j _ttpic/102.jpg
+python3 smally.py -j -p -g _ttpic/102.jpg
 python3 smally.py -p _ttpic/201.png
 python3 smally.py -g _ttpic/302.gif
 rm -rf _ttpic
@@ -34,10 +34,13 @@ rm -rf _ttpic
 
 echo '# Test smally.py with directory'
 cp -r testpic _ttpic
-cp -r testpic _ttpic/
 python3 smally.py -r _ttpic -P4
 rm -rf _ttpic
 
+echo '# Test smally.py with directory and type specification'
+cp -r testpic _ttpic
+python3 smally.py -j -p -r _ttpic
+rm -rf _ttpic
 
 echo 'Test OK!'
 

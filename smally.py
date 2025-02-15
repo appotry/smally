@@ -220,15 +220,14 @@ _VER = 'smally V0.54 by xinlin-z \
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-V', '--version', action='version', version=_VER)
-    ftype = parser.add_mutually_exclusive_group()
-    ftype.add_argument('-j', '--jpegtran', action='store_true',
-                       help='use jpegtran to compress jpeg file')
-    ftype.add_argument('-p', '--optipng', action='store_true',
-                       help='use optipng to compress png file')
-    ftype.add_argument('-g', '--gifsicle', action='store_true',
-                       help='use gifsicle to compress gif file')
+    parser.add_argument('-j', '--jpegtran', action='store_true',
+                        help='use jpegtran to compress jpeg file')
+    parser.add_argument('-p', '--optipng', action='store_true',
+                        help='use optipng to compress png file')
+    parser.add_argument('-g', '--gifsicle', action='store_true',
+                        help='use gifsicle to compress gif file')
     parser.add_argument('-r', '--recursive', action='store_true',
-                       help='recursively working on subdirectories ')
+                        help='recursively working on subdirectories ')
     parser.add_argument('pathname', help='specify the pathname, '
                                          'file or directory')
     parser.add_argument('-P',
@@ -240,19 +239,20 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # get pathname type
+    # pathname might contains unusual chars, here is test
     cmdstr = "file %s | awk '{print $2}'" % args.pathname
     rcode, stdout, stderr = _cmd(cmdstr, shell=True)
     if rcode != 0:
-        # pathname might contains unusual chars, here is test
         print('# error occure while executing: file %s' % args.pathname)
         print(stderr.decode(), end='')
         sys.exit(rcode)
     pathname_type = stdout.decode().strip()
     if pathname_type not in ('JPEG','PNG','GIF','directory'):
+        print(f'# pathname type of {args.pathname} is not supported')
         sys.exit(2)  # file type not in range
 
     # if type specified
-    if args.jpegtran or args.optipng or args.gifsicle:
+    if any((args.jpegtran,args.optipng,args.gifsicle)):
         if args.jpegtran and pathname_type=='JPEG':
             _show('j', args.pathname, jpegtran(args.pathname))
         elif args.optipng and pathname_type=='PNG':
@@ -260,10 +260,11 @@ if __name__ == '__main__':
         elif args.gifsicle and pathname_type=='GIF':
             _show('g', args.pathname, gifsicle(args.pathname))
         elif pathname_type == 'directory':
-            _find_xargs(args.P, ftype='-j' if args.jpegtran else
-                                      '-p' if args.optipng else
-                                      '-g',
-                                recur=args.recursive)
+            ftype = ''
+            ftype += ' -j' if args.jpegtran else ''
+            ftype += ' -p' if args.optipng else ''
+            ftype += ' -g' if args.gifsicle else ''
+            _find_xargs(args.P, ftype, args.recursive)
         else:
             sys.exit(1)  # file type not match
         sys.exit(0)
