@@ -51,12 +51,12 @@ def jpegtran(pathname: str) -> tuple[int,int]:
         basename = os.path.basename(pathname)
         wd = os.path.dirname(os.path.abspath(pathname))
         # baseline
-        file_1 = wd + '/'+ basename + '.smally.jpg.baseline'
+        file_1 = wd + '/'+ basename + '.smally.baseline'
         cmd_1 = 'jpegtran -copy none -optimize -outfile %s %s'\
                                                         % (file_1, pathname)
         _cmd(cmd_1)
         # progressive
-        file_2 = wd + '/' + basename + '.smally.jpg.progressive'
+        file_2 = wd + '/' + basename + '.smally.progressive'
         cmd_2 = 'jpegtran -copy none -progressive -optimize -outfile %s %s'\
                                                         % (file_2, pathname)
         _cmd(cmd_2)
@@ -68,11 +68,10 @@ def jpegtran(pathname: str) -> tuple[int,int]:
         size_2 = os.path.getsize(file_2)
         if size <= size_1 and size <= size_2:
             select_file = 0
-            if size == size_2 and progressive is False:
+            if size == size_2 and not progressive:
                 select_file = 2  # progressive is preferred
         else:
-            if size_2 <= size_1: select_file = 2
-            else: select_file = 1
+            select_file = 2 if size_2<=size_1 else 1
         # get mtime
         _, mtime, _ = _cmd('stat -c "%y" ' + pathname)
         # rm & mv
