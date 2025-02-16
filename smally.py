@@ -118,68 +118,45 @@ def jpegtran(pathname: str) -> tuple[int,int]:
         raise
 
 
-def optipng(pathname: str) -> tuple[int,int]:
-    """ use optipng to compress pathname,
-        return tuple (saved, orginal_size). """
-    try:
-        basename = os.path.basename(pathname)
-        wd = os.path.dirname(os.path.abspath(pathname))
-        out_file = wd + '/' + basename + '.smally.png'
-        cmds = 'optipng -fix -%s %s -out %s'%('-o7 -zm1-9',pathname,out_file)
-        _cmd(cmds)
-        size_1 = os.path.getsize(pathname)
-        size_2 = os.path.getsize(out_file)
-        if size_1 == size_2:
-            os.remove(out_file)
-            saved = 0
-        else:
-            saved = size_2 - size_1
-            _, mtime, _ = _cmd('stat -c "%y" ' + pathname)
-            os.remove(pathname)
-            os.rename(out_file, pathname)
-            _cmd('touch -m -d "'+mtime.decode()+'" '+pathname)
-        return saved, size_1
-    except BaseException:
+class make_choice:
+    """ execute command, compare size, and make choice """
+
+    def __init__(self, cmdstr: str) -> None:
+        self.cmdstr = cmdstr
+
+    def __call__(self, pathname: str) ->tuple[int,int]:
         try:
-            if os.path.exists(pathname):
-                os.remove(out_file)
-            elif os.path.exists(out_file):
-                os.rename(out_file, pathname)
-        except FileNotFoundError:
-            pass
-        raise
+            basename = os.path.basename(pathname)
+            wd = os.path.dirname(os.path.abspath(pathname))
+            tmpfile = wd + '/' + basename + '.smally'
+            cmds = self.cmdstr % (pathname,tmpfile)
+            _cmd(cmds)
+            size_1 = os.path.getsize(pathname)
+            size_2 = os.path.getsize(tmpfile)
+            if size_1 == size_2:
+                os.remove(tmpfile)
+                saved = 0
+            else:
+                saved = size_2 - size_1
+                _, mtime, _ = _cmd('stat -c "%y" ' + pathname)
+                os.remove(pathname)
+                os.rename(tmpfile, pathname)
+                _cmd('touch -m -d "'+mtime.decode()+'" '+pathname)
+            return saved, size_1
+        except BaseException:
+            try:
+                if os.path.exists(pathname):
+                    os.remove(tmpfile)
+                elif os.path.exists(tmpfile):
+                    os.rename(tmpfile, pathname)
+            except FileNotFoundError:
+                pass
+            raise
 
 
-def gifsicle(pathname: str) -> tuple[int,int]:
-    """ use gifsicle to compress pathname,
-        return tuple (saved, orginal_size). """
-    try:
-        basename = os.path.basename(pathname)
-        wd = os.path.dirname(os.path.abspath(pathname))
-        out_file = wd + '/' + basename + '.smally.gif'
-        cmdstr = 'gifsicle -O3 --colors 256 %s -o %s' % (pathname, out_file)
-        _cmd(cmdstr)
-        size_1 = os.path.getsize(pathname)
-        size_2 = os.path.getsize(out_file)
-        if size_1 <= size_2:
-            os.remove(out_file)
-            saved = 0
-        else:
-            saved = size_2 - size_1
-            _, mtime, _ = _cmd('stat -c "%y" ' + pathname)
-            os.remove(pathname)
-            os.rename(out_file, pathname)
-            _cmd('touch -m -d "'+mtime.decode()+'" '+pathname)
-        return saved, size_1
-    except BaseException:
-        try:
-            if os.path.exists(pathname):
-                os.remove(out_file)
-            elif os.path.exists(out_file):
-                os.rename(out_file, pathname)
-        except FileNotFoundError:
-            pass
-        raise
+# must have two %s
+optipng = make_choice('optipng -fix -o7 -zm1-9 %s -out %s')
+gifsicle = make_choice('gifsicle -O3 --colors 256 %s -o %s')
 
 
 def _show(ftype: str, pathname: str, saved: tuple[int,int]) -> None:
