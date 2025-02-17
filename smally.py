@@ -168,12 +168,13 @@ def _show(ftype: str, pathname: str, saved: tuple[int,int]) -> None:
     print(' '.join((pathname, logstr, tail)))
 
 
-def _find_xargs(pnum: int, ftype: str='', recur: bool=False) -> None:
+def _find_xargs(pnum: int, pathname: str,
+                ftype: str='', recur: bool=False) -> None:
     pnum = min(mp.cpu_count(), pnum)
     print('# parallel process number: ', pnum)
     cmdstr = 'find -L %s -type f -print0 %s | ' \
              'xargs -P%d -I+ -0 python %s %s +' \
-             % (args.pathname,
+             % (pathname,
                 '' if recur else '-maxdepth 1',
                 pnum,
                 sys.argv[0],
@@ -241,7 +242,7 @@ if __name__ == '__main__':
         ftype += ' -j' if args.jpegtran else ''
         ftype += ' -p' if args.optipng else ''
         ftype += ' -g' if args.gifsicle else ''
-        _find_xargs(args.P, ftype, args.recursive)
+        _find_xargs(args.P, args.pathname, ftype, args.recursive)
     else:
         sys.exit(1)  # file type not match
     sys.exit(0)
