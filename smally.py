@@ -49,12 +49,12 @@ class mtt:
     """ mtime tools class """
 
     @staticmethod
-    def get(pathname):
+    def get(pathname: str) -> bytes:
         _, mtime, _ = _cmd('stat -c "%y" ' + pathname)
         return mtime.strip()
 
     @staticmethod
-    def set(pathname, mtime):
+    def set(pathname: str, mtime: bytes) -> None:
         _cmd('touch -m -d "'+mtime.decode()+'" '+pathname)
 
 
