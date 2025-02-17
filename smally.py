@@ -51,7 +51,7 @@ class mtt:
     @staticmethod
     def get(pathname):
         _, mtime, _ = _cmd('stat -c "%y" ' + pathname)
-        return mtime
+        return mtime.strip()
 
     @staticmethod
     def set(pathname, mtime):
@@ -210,7 +210,8 @@ CREATE_SQL = f"""
 create table {TNAME}(
     id integer primary key,
     fname text not null unique,  -- file basename, include suffix
-    bsize int                    -- byte size
+    bsize int,                   -- byte size
+    mtime blob                   -- mtime
 );
 """
 
@@ -223,6 +224,7 @@ class operate_db:
         self.wd = os.path.dirname(os.path.abspath(pathname))
         self.dbfile = self.wd + '/' + FDBNAME
         self.id = None
+        self.mtime = mtt.get(pathname)
         self._detect_create_table()
 
     def _detect_create_table(self) -> None:
@@ -238,13 +240,14 @@ class operate_db:
     def need_compress(self) -> bool:
         conn = sqlite3.connect(self.dbfile)
         cur = conn.cursor()
-        sql = f'select id,bsize from {TNAME} where fname="{self.basename}"'
+        sql = f'select id, bsize, mtime from {TNAME}'\
+              f' where fname="{self.basename}"'
         result = cur.execute(sql).fetchone()
         conn.close()
         if not result:
             return True
         self.id = result[0]
-        if self.bsize > result[1]:
+        if self.bsize>result[1] or self.mtime!=result[2]:
             return True
         return False
 
@@ -252,11 +255,11 @@ class operate_db:
         conn = sqlite3.connect(self.dbfile)
         cur = conn.cursor()
         if self.id:
-            sql = f'update {TNAME} set bsize={bsize} where id={self.id}'
+            sql = f'update {TNAME} set bsize=?,mtime=? where id={self.id}'
+            cur.execute(sql, (bsize,self.mtime))
         else:
-            sql = f'insert into {TNAME}(fname,bsize) values'\
-                  f'("{self.basename}",{bsize})'
-        cur.execute(sql)
+            sql = f'insert into {TNAME}(fname,bsize,mtime) values(?,?,?)'
+            cur.execute(sql, (self.basename,bsize,self.mtime))
         conn.commit()
         conn.close()
 
