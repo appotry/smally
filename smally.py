@@ -227,32 +227,22 @@ if __name__ == '__main__':
         print(f'# pathname type of {args.pathname} is not supported')
         sys.exit(2)  # file type not in range
 
-    # if type specified
-    if any((args.jpegtran,args.optipng,args.gifsicle)):
-        if args.jpegtran and pathname_type=='JPEG':
-            _show('j', args.pathname, jpegtran(args.pathname))
-        elif args.optipng and pathname_type=='PNG':
-            _show('p', args.pathname, optipng(args.pathname))
-        elif args.gifsicle and pathname_type=='GIF':
-            _show('g', args.pathname, gifsicle(args.pathname))
-        elif pathname_type == 'directory':
-            ftype = ''
-            ftype += ' -j' if args.jpegtran else ''
-            ftype += ' -p' if args.optipng else ''
-            ftype += ' -g' if args.gifsicle else ''
-            _find_xargs(args.P, ftype, args.recursive)
-        else:
-            sys.exit(1)  # file type not match
-        sys.exit(0)
+    if not any((args.jpegtran,args.optipng,args.gifsicle)):
+        args.jpegtran = args.optipng = args.gifsicle = 1
 
-    # no type specified
-    if pathname_type == 'JPEG':
+    if args.jpegtran and pathname_type=='JPEG':
         _show('j', args.pathname, jpegtran(args.pathname))
-    elif pathname_type == 'PNG':
+    elif args.optipng and pathname_type=='PNG':
         _show('p', args.pathname, optipng(args.pathname))
-    elif pathname_type == 'GIF':
+    elif args.gifsicle and pathname_type=='GIF':
         _show('g', args.pathname, gifsicle(args.pathname))
     elif pathname_type == 'directory':
-        _find_xargs(args.P, '', args.recursive)
+        ftype = ''
+        ftype += ' -j' if args.jpegtran else ''
+        ftype += ' -p' if args.optipng else ''
+        ftype += ' -g' if args.gifsicle else ''
+        _find_xargs(args.P, ftype, args.recursive)
+    else:
+        sys.exit(1)  # file type not match
     sys.exit(0)
 
