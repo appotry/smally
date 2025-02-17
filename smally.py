@@ -45,6 +45,19 @@ def is_jpeg_progressive(pathname: str) -> bool:
     return code == 0
 
 
+class mtt:
+    """ mtime tools class """
+
+    @staticmethod
+    def get(pathname):
+        _, mtime, _ = _cmd('stat -c "%y" ' + pathname)
+        return mtime
+
+    @staticmethod
+    def set(pathname, mtime):
+        _cmd('touch -m -d "'+mtime.decode()+'" '+pathname)
+
+
 def jpegtran(pathname: str) -> tuple[int,int]:
     """ use jpegtran to compress pathname,
         return tuple (saved, orginal_size). """
@@ -73,8 +86,7 @@ def jpegtran(pathname: str) -> tuple[int,int]:
                 select_file = 2  # progressive is preferred
         else:
             select_file = 2 if size_2<=size_1 else 1
-        # get mtime
-        _, mtime, _ = _cmd('stat -c "%y" ' + pathname)
+        mtime = mtt.get(pathname)
         # rm & mv
         if select_file == 0:  # origin
             os.remove(file_1)
@@ -92,7 +104,7 @@ def jpegtran(pathname: str) -> tuple[int,int]:
             saved = size_2 - size
         # keep mtime
         if select_file != 0:
-            _cmd('touch -m -d "'+mtime.decode()+'" '+pathname)
+            mtt.set(pathname, mtime)
         return saved, size
     except BaseException:
         try:
@@ -138,10 +150,10 @@ class make_choice:
                 saved = 0
             else:
                 saved = size_2 - size_1
-                _, mtime, _ = _cmd('stat -c "%y" ' + pathname)
+                mtime = mtt.get(pathname)
                 os.remove(pathname)
                 os.rename(tmpfile, pathname)
-                _cmd('touch -m -d "'+mtime.decode()+'" '+pathname)
+                mtt.set(pathname, mtime)
             return saved, size_1
         except BaseException:
             try:
