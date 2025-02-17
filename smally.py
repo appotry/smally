@@ -164,7 +164,7 @@ def _show(ftype: str, pathname: str, saved: tuple[int,int]) -> None:
         logstr = '--'
     else:
         logstr = str(saved[0]) +' '+ str(round(saved[0]/saved[1]*100,2)) +'%'
-    tail = '' if ftype!='j' else \
+    tail = '' if ftype!='JPEG' else \
                   '[p]' if is_jpeg_progressive(pathname) else '[b]'
     print(' '.join((pathname, logstr, tail)))
 
@@ -249,14 +249,6 @@ class operate_db:
         conn.close()
 
 
-def do_single_file(ftype, handler, pathname):
-    db = operate_db(pathname)
-    if db.need_compress():
-        sizes =  handler(pathname)
-        _show('j', pathname, sizes)
-        db.update(sizes[1]-sizes[0])
-
-
 _VER = 'smally V0.54 by xinlin-z \
         (https://github.com/xinlin-z/smally)'
 
@@ -292,25 +284,33 @@ if __name__ == '__main__':
         sys.exit(rcode)
     pathname_type = stdout.decode().strip()
     if pathname_type not in ('JPEG','PNG','GIF','directory'):
-        print(f'# pathname type of {args.pathname} is not supported')
         sys.exit(2)  # file type not in range
 
     if not any((args.jpegtran,args.optipng,args.gifsicle)):
         args.jpegtran = args.optipng = args.gifsicle = 1
 
     if args.jpegtran and pathname_type=='JPEG':
-        do_single_file('j', jpegtran, args.pathname)
+        doer = jpegtran
     elif args.optipng and pathname_type=='PNG':
-        do_single_file('p', optipng, args.pathname)
+        doer = optipng
     elif args.gifsicle and pathname_type=='GIF':
-        do_single_file('g', gifsicle, args.pathname)
+        doer = gifsicle
     elif pathname_type == 'directory':
         ftype = ''
         ftype += ' -j' if args.jpegtran else ''
         ftype += ' -p' if args.optipng else ''
         ftype += ' -g' if args.gifsicle else ''
         _find_xargs(args.P, args.pathname, ftype, args.recursive)
+        sys.exit(0)
     else:
         sys.exit(1)  # file type not match
+
+    db = operate_db(args.pathname)
+    if db.need_compress():
+        sizes = doer(args.pathname)
+        db.update(sizes[1]+sizes[0])  # saved is negative!
+        _show(pathname_type, args.pathname, sizes)
+
     sys.exit(0)
+
 
