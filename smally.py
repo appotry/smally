@@ -20,6 +20,7 @@ import subprocess
 import argparse
 import multiprocessing as mp
 import shlex
+import sqlite3
 
 
 __all__ = ['is_jpeg_progressive',
@@ -190,6 +191,72 @@ def _find_xargs(pnum: int, pathname: str,
         sys.exit(3)  # subprocess error
 
 
+# There is a SQLite database file for every folder to prevent from re-doing.
+TNAME = 'filescan'
+FDBNAME = '.smally.db'
+CREATE_SQL = f"""
+create table {TNAME}(
+    id integer primary key,
+    fname text not null unique,  -- file basename, include suffix
+    bsize int                    -- byte size
+);
+"""
+
+
+class operate_db:
+
+    def __init__(self, pathname: str) -> None:
+        self.basename = os.path.basename(pathname)
+        self.bsize = os.path.getsize(pathname)
+        self.wd = os.path.dirname(os.path.abspath(pathname))
+        self.dbfile = self.wd + '/' + FDBNAME
+        self.id = None
+        self._detect_create_table()
+
+    def _detect_create_table(self) -> None:
+        conn = sqlite3.connect(self.dbfile)
+        cur = conn.cursor()
+        sql = f'select * from sqlite_master where type="table"'\
+              f' and name="{TNAME}"'
+        if cur.execute(sql).fetchone() is None:
+            cur.execute(CREATE_SQL)
+            conn.commit()
+        conn.close()
+
+    def need_compress(self) -> bool:
+        conn = sqlite3.connect(self.dbfile)
+        cur = conn.cursor()
+        sql = f'select id,bsize from {TNAME} where fname="{self.basename}"'
+        result = cur.execute(sql).fetchone()
+        conn.close()
+        if not result:
+            return True
+        self.id = result[0]
+        if self.bsize > result[1]:
+            return True
+        return False
+
+    def update(self, bsize: int) -> None:
+        conn = sqlite3.connect(self.dbfile)
+        cur = conn.cursor()
+        if self.id:
+            sql = f'update {TNAME} set bsize={bsize} where id={self.id}'
+        else:
+            sql = f'insert into {TNAME}(fname,bsize) values'\
+                  f'("{self.basename}",{bsize})'
+        cur.execute(sql)
+        conn.commit()
+        conn.close()
+
+
+def do_single_file(ftype, handler, pathname):
+    db = operate_db(pathname)
+    if db.need_compress():
+        sizes =  handler(pathname)
+        _show('j', pathname, sizes)
+        db.update(sizes[1]-sizes[0])
+
+
 _VER = 'smally V0.54 by xinlin-z \
         (https://github.com/xinlin-z/smally)'
 
@@ -232,11 +299,11 @@ if __name__ == '__main__':
         args.jpegtran = args.optipng = args.gifsicle = 1
 
     if args.jpegtran and pathname_type=='JPEG':
-        _show('j', args.pathname, jpegtran(args.pathname))
+        do_single_file('j', jpegtran, args.pathname)
     elif args.optipng and pathname_type=='PNG':
-        _show('p', args.pathname, optipng(args.pathname))
+        do_single_file('p', optipng, args.pathname)
     elif args.gifsicle and pathname_type=='GIF':
-        _show('g', args.pathname, gifsicle(args.pathname))
+        do_single_file('g', gifsicle, args.pathname)
     elif pathname_type == 'directory':
         ftype = ''
         ftype += ' -j' if args.jpegtran else ''
